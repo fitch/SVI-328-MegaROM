@@ -1,0 +1,11 @@
+build/
+release/
+roms/*
+uncompressed_roms/*
+
+pcb/SVI-328-MegaROM-backups
+pcb/~*
+pcb/#*
+pcb/*autosave*
+pcb/fp-info-cache
+pcb/gerber.zip
