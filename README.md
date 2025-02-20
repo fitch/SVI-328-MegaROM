@@ -63,7 +63,7 @@ Move `franticfreddy.rom.32.dat.zx0` to [roms](roms/) folder.
 
 ### Compile and run
 
-Now, create an emulator version of the ROM image with `make simulator`.
+Now, create an emulator version of the ROM image with `make emulator`.
 
 Then, use `make run` to run the version in openMSX emulator.
 
@@ -92,6 +92,8 @@ See chapter [Sector rotation](#sector-rotation) for information on how the CD406
 ![A picture of the schematics of the PCB](images/schematic.png "Schematics of the PCB")
 
 ![A picture of the schematics of the PCB](images/pcb_preview.jpeg "Schematics of the PCB")
+
+I recommend using a 32-pin spring socket under the memory chip so that it's easy to detach and attach the EPROMs.
 
 # Cartridge ROM contents and operation
 
@@ -277,6 +279,58 @@ In this ROM type, you need to supply the uncompressed game length using `length`
         "jump": "0x8000",
         "length": "17153"
     }
+
+# Compiling the production version
+
+To compile the production version of the ROM cartridge image, please use `make production`. 
+
+If the build prosess reports an error (see below) about modifying `SECTOR0_START`, you need to supply a larger value to the `makefile`.
+
+    z88dk-z80asm -o=build/sector0.bin -DSECTOR0_START=9100 -DLAUNCHER_ADDRESS=0x8001               -DDZX0_ADDRESS=65468                    -m -l -b -DROM_ID=0 build/rom1024.asm -I=asm
+    build/rom1024.asm:24: error: integer range: -$3e6
+    ^---- defs SECTOR0_START-$, 0xff ; If this fails, increase SECTOR0_START in makefile
+        ^---- defs SECTOR0_START-$,255
+
+If you supplied a value large enough, the build process successfully completes and suggests the actual value:
+
+    Magic number (use this in makefile): 10095
+    Maximum compressed ROM size in this build: 31943
+    1024 kB version compiled (release/cart1024.rom)
+
+To optimize the ROM cartridge usage you should use the provided Magic number as `SECTOR0_START` value. In some cases, even if you supply the exact magic number, the build process still can crash with a following type of error:
+
+    build/rom1024.asm:24: error: integer range: -1
+    ^---- defs SECTOR0_START-$, 0xff ; If this fails, increase SECTOR0_START in makefile
+        ^---- defs SECTOR0_START-$,255
+
+Then, just increase `SECTOR0_START` with one or two, rebuild and keep doing this until it successfully builds the ROM image. As supplying a different value will change the contents of the launcher image, and once it is compressed with different contents, the resulting image lenght may vary. This makes it impossible to know the resulting compressed launcher image size in beforehand.
+
+You will find the resulting ROM image from `release/cart1024.rom`.
+
+# Burning the EPROM
+
+To burn the ROM image to an EPROM, you can use [minipro](https://formulae.brew.sh/formula/minipro) version 0.7.2 on macOS. Use the following command with AT27C080 with DIP32 pins:
+
+```
+minipro -p AT27C080@DIP32 -w cart1024.rom
+```
+
+For the EPROM burner, I'm suggesting a [TL866II Plus](https://www.amazon.de/dp/B07KM3J7CZ) programmer. To erase the UV EPROMS you can use a [UV EPROM eraser](https://www.amazon.de/-/en/dp/B000M5AJ8Q).
+
+I had to update the programmer firmware first with a Windows machine in order to get it to work on macOS. See the details of the minipro output below:
+
+```
+Found T48 01.1.31 (0x11f)
+Warning: T48 support is experimental!
+Device code: 44A13469
+Serial code: VTQRRFJKXR60YE8R9I6Y4274
+
+VPP=13V, VDD=6.5V, VCC=5V, Pulse=50us
+Chip ID: 0x1E8A  OK
+Writing Code...  257.18Sec  OK
+Reading Code...  7.25Sec  OK
+Verification OK
+```
 
 # Special thanks
 

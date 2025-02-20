@@ -14,7 +14,7 @@ _main:
 
 ROM_STACK               equ 0xf21c
 
-#ifdef SIMULATOR                ; Define ROM_ID address to 0x8000 in simulator so you can change it manually in the RAM debugger
+#ifdef EMULATOR                ; Define ROM_ID address to 0x8000 in emulator so you can change it manually in the RAM debugger
 ROM_ID_ADDRESS          equ 0x8000
 #else                           ; Otherwise it's the last byte of the 16 kB ROM sector
 ROM_ID_ADDRESS          equ 16384-1
@@ -24,7 +24,7 @@ ROM_ID_ADDRESS          equ 16384-1
     di                          ; di and ld sp, xxxx are required to boot from a ROM
     ld sp, ROM_STACK            ; Place stack for BASIC BIOS compatible location
 
-#ifndef SIMULATOR
+#ifndef EMULATOR
 .wait_for_sector_x:             ; Wait that we'll bypass ROM 0 (that we have time to copy it next time)
     ld a, (ROM_ID_ADDRESS)      ; Check which ROM ID is visible
     or a
@@ -34,10 +34,10 @@ ROM_ID_ADDRESS          equ 16384-1
     ld a, (ROM_ID_ADDRESS)      ; Check which ROM ID is visible
     or a
     jr nz, wait_for_sector_0
-#else                           ; In simulator, don't wait for ROM change
+#else                           ; In emulator, don't wait for ROM change
     REPT 12
     nop
     ENDR
 #endif
 
-; Now we're at sector 0, let execution flow to rom_production.asm / rom_simulator.asm
+; Now we're at sector 0, let execution flow to rom_production.asm / rom_emulator.asm

@@ -10,7 +10,7 @@ PUBLIC _main
 _main:
 #endif
 
-#ifdef SIMULATOR                ; Define ROM_ID address to 0x8000 in simulator so you can change it manually in the RAM debugger
+#ifdef EMULATOR                ; Define ROM_ID address to 0x8000 in emulator so you can change it manually in the RAM debugger
 ROM_ID_ADDRESS          equ 0x8000
 #else                           ; Otherwise it's the last byte of the 16 kB ROM sector
 ROM_ID_ADDRESS          equ 16384-1
@@ -26,7 +26,7 @@ MACRO PrintVRAM address
     call PrintStringVRAM
 ENDM
 
-    org LAUNCHER_ADDRESS        ; This is a hard-coded entry address of the simulator
+    org LAUNCHER_ADDRESS        ; This is a hard-coded entry address of the emulator
 LAUNCHER_START:
     call PSG_show_BIOS_ROM
 
@@ -99,16 +99,16 @@ LAUNCHER_START:
     push bc
     ld hl, (GameIndex)          ; Game location in first sector
 
-#ifdef SIMULATOR                ; If in simulator, we're using a 32 kB ROM so the sector 1 is at 16384
+#ifdef EMULATOR                ; If in emulator, we're using a 32 kB ROM so the sector 1 is at 16384
     ld a, (GameStartSector)
     cp a, 1
-    jr z, adjust_address        ; If sector 1, it resides in the 2nd block in 32 kB simulator ROM
+    jr z, adjust_address        ; If sector 1, it resides in the 2nd block in 32 kB emulator ROM
     cp a, 3
-    jr z, adjust_address        ; If sector 3, it resides in the 2nd block in 32 kB simulator ROM
+    jr z, adjust_address        ; If sector 3, it resides in the 2nd block in 32 kB emulator ROM
 
     jr continue
 .adjust_address:
-    add hl, 0x4000              ; If sector 1, in simulator it's in the upper 16 kB
+    add hl, 0x4000              ; If sector 1, in emulator it's in the upper 16 kB
 .continue:
 #endif
 
@@ -170,11 +170,11 @@ LAUNCHER_START:
     jr nz, wait_until_sector_changes
 
     ld hl, LOADER_SIZE          ; Any other sector than 0 starts always at LOADER_SIZE
-#ifdef SIMULATOR                ; If in simulator, sectors 1 and 3 start at LOADER_SIZE + 16384
+#ifdef EMULATOR                ; If in emulator, sectors 1 and 3 start at LOADER_SIZE + 16384
     cp a, 1
-    jr z, adjust_address2       ; If sector 1, it resides in the 2nd block in 32 kB simulator ROM
+    jr z, adjust_address2       ; If sector 1, it resides in the 2nd block in 32 kB emulator ROM
     cp a, 3
-    jr z, adjust_address2       ; If sector 3, it resides in the 2nd block in 32 kB simulator ROM
+    jr z, adjust_address2       ; If sector 3, it resides in the 2nd block in 32 kB emulator ROM
 
     jr continue2
 .adjust_address2:
@@ -207,11 +207,11 @@ LAUNCHER_START:
     jr nz, wait_until_sector_changes2
 
     ld hl, LOADER_SIZE          ; The third sector always starts after LOADER_SIZE
-#ifdef SIMULATOR                ; If in simulator, sectors 1 and 3 start at LOADER_SIZE + 16384
+#ifdef EMULATOR                ; If in emulator, sectors 1 and 3 start at LOADER_SIZE + 16384
     cp a, 1
-    jr z, adjust_address3       ; If sector 1, it resides in the 2nd block in 32 kB simulator ROM
+    jr z, adjust_address3       ; If sector 1, it resides in the 2nd block in 32 kB emulator ROM
     cp a, 3
-    jr z, adjust_address3       ; If sector 3, it resides in the 2nd block in 32 kB simulator ROM
+    jr z, adjust_address3       ; If sector 3, it resides in the 2nd block in 32 kB emulator ROM
 
     jr continue3
 .adjust_address3:
@@ -233,34 +233,34 @@ LAUNCHER_START:
     or a                        ; FIXME: Verify that this compares to 0
     jr z, loader_cas_16_zx0
     cp 0x0c
-    jr z, caslen_zx0_loader
+    jr z, loader_cas_len_zx0
     cp 0x01
-    jp z, rom32_zx0_loader
+    jp z, loader_rom_32_zx0
     cp 0x02
-    jr z, cas16_loader
+    jr z, loader_cas_16
     cp 0x03
-    jr z, cas8_loader
+    jr z, loader_cas_8
 #if EXEROM_DISABLE=0 
     cp 0x04                     ; msx.32.pletter.1
-    jp z, continue_msx32_pletter
+    jp z, loader_msx_32_pletter_part1
     cp 0x05                     ; msx.32.pletter.2
     jp z, EXEROM_32KB_PL_PART2  ; MSX loader: 32 kB ROM-file second part (packed with Pletter)
     cp 0x06                     ; msx.32.zx0.1
-    jp z, continue_msx32_zx0
+    jp z, loader_msx_32_zx0_part1
     cp 0x07                     ; msx.32.zx0.2
-    jp z, finish_msx32_zx0
+    jp z, loader_msx_32_zx0_part2
     cp 0x08                     ; msx.16.zx0
-    jp z, msx16_zx0_loader
+    jp z, loader_msx_16_zx0
 #endif
     cp 0x09                     ; rom.48.zx0.1
-    jp z, continue_rom48_zx0
+    jp z, loader_rom_48_zx0_part1
     cp 0x0a                     ; rom.48.zx0.2
-    jp z, finish_rom48_zx0
+    jp z, loader_rom_48_zx0_part2
     cp 0x0b                     ; rom.48.zx0
     jp z, loader_rom_48_zx0
     jp not_supported            ; Not supported type
 
-.cas16_loader:                  ; Uncompressed 16 kB .CAS game 
+.loader_cas_16:                 ; Uncompressed 16 kB .CAS game 
     call PSG_show_BIOS_ROM      ; cas.16 games require BASIC BIOS ROM to be visible
 
 #if CHECK_CRC=1
@@ -272,7 +272,7 @@ LAUNCHER_START:
     ld hl, (GameJumpAddress)
     jp (hl)
 
-.cas8_loader:                   ; Uncompressed 8 kB .CAS game
+.loader_cas_8:                  ; Uncompressed 8 kB .CAS game
     call PSG_show_BIOS_ROM      ; cas.8 games require BASIC BIOS ROM to be visible
 
 #if CHECK_CRC=1
@@ -306,7 +306,7 @@ LAUNCHER_START:
     ld hl, (GameJumpAddress)
     jp (hl)
 
-.caslen_zx0_loader:
+.loader_cas_len_zx0:
     call PSG_show_BIOS_ROM      ; cas.len games require BASIC BIOS ROM to be visible
     ld hl, (GameJumpAddress)
     push hl
@@ -315,7 +315,7 @@ LAUNCHER_START:
     ld hl, (GameCompressedAddress)
     jp DZX0_ADDRESS
 
-.rom32_zx0_loader:
+.loader_rom_32_zx0:
     call PSG_disable_CART_enable_BK21
 
     ld de, (GameLoadAddress)
@@ -345,14 +345,14 @@ LAUNCHER_START:
 MessageNotSupported:
     db "Error: ROM type not supported", 0
 
-.continue_msx32_pletter:        ; Continue loading MSX 32 kB ROM
+.loader_msx_32_pletter_part1:   ; Continue loading MSX 32 kB ROM
 #if EXEROM_DISABLE=0 
     call PSG_show_BIOS_ROM
     call EXEROM_32KB_PL_PART1   ; MSX loader: 32 kB ROM-file first part (packed with Pletter)
     jr continue_msx32
 #endif
 
-.continue_msx32_zx0:            ; Continue loading MSX 32 kB ROM packed with ZX0
+.loader_msx_32_zx0_part1:       ; Continue loading MSX 32 kB ROM packed with ZX0
 #if EXEROM_DISABLE=0 
     ld hl, (GameCompressedAddress)
     ld de, (GameLoadAddress)
@@ -371,7 +371,7 @@ MessageNotSupported:
     jp load_another_part
 #endif
 
-.finish_msx32_zx0:              ; Finish loading MSX 32 kB ROM packed with ZX0
+.loader_msx_32_zx0_part2:       ; Finish loading MSX 32 kB ROM packed with ZX0
 #if EXEROM_DISABLE=0 
     ld hl, (GameCompressedAddress)
     ld de, (GameLoadAddress)
@@ -380,7 +380,7 @@ MessageNotSupported:
     jp EXEROM_32KB_RAW_PART2    ; MSX loader: 32 kB ROM-file first part (now unpacked)
 #endif
 
-.msx16_zx0_loader               ; Load 16 kBM MSX ROM packed with ZX0
+.loader_msx_16_zx0              ; Load 16 kBM MSX ROM packed with ZX0
 #if EXEROM_DISABLE=0 
     ld hl, (GameCompressedAddress)
     ld de, (GameLoadAddress)
@@ -389,7 +389,7 @@ MessageNotSupported:
     jp EXEROM_16KB_RAW          ; MSX loader: 32 kB ROM-file first part (now unpacked)
 #endif
 
-.continue_rom48_zx0:            ; Part 1
+.loader_rom_48_zx0_part1:       ; Part 1
     call PSG_disable_CART_enable_BK21
 
     ld hl, GAME_DATA_STORAGE
@@ -403,7 +403,7 @@ MessageNotSupported:
 
     jp load_another_part
 
-.finish_rom48_zx0:              ; Part 2
+.loader_rom_48_zx0_part2:       ; Part 2
     call PSG_disable_CART_enable_BK21
 
     ld hl, (GameJumpAddress)

@@ -4,9 +4,9 @@
 ; 
 ; Use z88dk to compile, type 'make', see 'makefile' for details.
 ;
-; A version of the ROM to test with the simulator (32 kB).
+; A version of the ROM to test with the emulator (32 kB).
 ;
-; When you start this in the simulator you need to manually change address
+; When you start this in the emulator you need to manually change address
 ; 0x8000 byte in the debugger to first other than 0 and then back to zero in
 ; order the loader to start copying data.
 ;

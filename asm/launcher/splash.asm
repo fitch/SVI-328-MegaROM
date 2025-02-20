@@ -36,7 +36,7 @@ ShowSplash:
     ld h, 68
     call SVI_ROM_PRLOGO_LINE    ; Third line
 
-    ld a, 72
+    ld a, 66
     ld (SVI_RAM_CSRX), a
     ld a, 90
     ld (SVI_RAM_CSRY), a
@@ -52,7 +52,7 @@ ShowSplash:
     ret
 
 MessageMegaROM:
-    db "SVI-328 MegaROM 1.0", 0
+    db "SVI-328 MegaROM 1.0.1", 0
 
 MessageCopyright:
     db "(c) 2025 MAG-4", 0

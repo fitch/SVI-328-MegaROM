@@ -440,6 +440,19 @@ function generateGameDataAsm() {
     console.log(`Created gamedata.asm to ${asmFilePath}`)
 }
 
+function generateGameList() {
+    const output = []
+    const sortedGames = [...config]
+
+    sortedGames.sort((a, b) => a.name.localeCompare(b.name))
+    sortedGames.forEach(game => {
+        output.push(`${game.name} - ${game.author}`)
+    })
+    const gameListFilePath = path.join(buildDir, 'gamelist.txt')
+    fs.writeFileSync(gameListFilePath, output.join('\n'), 'utf8')
+    console.log(`Created gamelist.txt to ${gameListFilePath}`)
+}
+
 const bytesFree = SECTOR0_SIZE + SECTOR1PLUS_SIZE * (SECTOR_COUNT - 1) - bytesUsed
 
 if (bytesFree < 0) {
@@ -451,5 +464,6 @@ console.log(`The games use ${bytesUsed} bytes, the ROM has still ${bytesFree} by
 
 writeSectorFiles()
 generateGameDataAsm()
+generateGameList()
 
 console.log('Processing complete!')
